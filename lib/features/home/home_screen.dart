@@ -6,6 +6,7 @@ import '../../core/providers/user_provider.dart';
 import '../../core/theme.dart';
 import '../redeem/redeem_screen.dart';
 import '../activity/activity_screen.dart';
+import '../notification/notification_screen.dart';
 import '../../core/utils/extensions.dart';
 
 class HomeScreen extends StatelessWidget {
@@ -33,7 +34,7 @@ class HomeScreen extends StatelessWidget {
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  _buildHeader(user?['name'] ?? 'Pahlawan'),
+                  _buildHeader(context, user?['name'] ?? 'Pahlawan'),
                   const SizedBox(height: 32),
                   _buildPointCard(
                     context, 
@@ -56,7 +57,7 @@ class HomeScreen extends StatelessWidget {
     );
   }
 
-  Widget _buildHeader(String name) {
+  Widget _buildHeader(BuildContext context, String name) {
     return Column(
       children: [
         Row(
@@ -83,19 +84,42 @@ class HomeScreen extends StatelessWidget {
                 ),
               ],
             ),
-            Container(
-              padding: const EdgeInsets.all(10),
-              decoration: BoxDecoration(
-                color: Colors.white,
-                borderRadius: BorderRadius.circular(14),
-                boxShadow: [
-                  BoxShadow(
-                    color: Colors.black.withOpacity(0.05),
-                    blurRadius: 10,
-                  )
+            InkWell(
+              onTap: () => Navigator.push(
+                context, 
+                MaterialPageRoute(builder: (context) => const NotificationScreen())
+              ),
+              child: Stack(
+                children: [
+                  Container(
+                    padding: const EdgeInsets.all(10),
+                    decoration: BoxDecoration(
+                      color: Colors.white,
+                      borderRadius: BorderRadius.circular(14),
+                      boxShadow: [
+                        BoxShadow(
+                          color: Colors.black.withOpacity(0.05),
+                          blurRadius: 10,
+                        )
+                      ],
+                    ),
+                    child: const Icon(LucideIcons.bell, color: AppColors.textMain, size: 20),
+                  ),
+                  if (context.watch<UserProvider>().notifications.any((n) => !n['isRead']))
+                    Positioned(
+                      right: 4,
+                      top: 4,
+                      child: Container(
+                        height: 10,
+                        width: 10,
+                        decoration: const BoxDecoration(
+                          color: Colors.red,
+                          shape: BoxShape.circle,
+                        ),
+                      ),
+                    ),
                 ],
               ),
-              child: const Icon(LucideIcons.bell, color: AppColors.textMain, size: 20),
             ),
           ],
         ),

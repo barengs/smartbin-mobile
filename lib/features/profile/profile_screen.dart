@@ -5,6 +5,9 @@ import 'package:provider/provider.dart';
 import '../../core/providers/user_provider.dart';
 import '../../core/theme.dart';
 import '../auth/login_screen.dart';
+import 'edit_profile_screen.dart';
+import 'security_screen.dart';
+import '../notification/notification_screen.dart';
 
 class ProfileScreen extends StatelessWidget {
   const ProfileScreen({super.key});
@@ -53,15 +56,21 @@ class ProfileScreen extends StatelessWidget {
               
               const SizedBox(height: 40),
               _buildMenuSection('PENGATURAN AKUN', [
-                _buildMenuItem(LucideIcons.user, 'Edit Profil'),
-                _buildMenuItem(LucideIcons.shieldCheck, 'Keamanan'),
-                _buildMenuItem(LucideIcons.bell, 'Notifikasi'),
+                _buildMenuItem(LucideIcons.user, 'Edit Profil', () {
+                  Navigator.push(context, MaterialPageRoute(builder: (context) => const EditProfileScreen()));
+                }),
+                _buildMenuItem(LucideIcons.shieldCheck, 'Keamanan', () {
+                  Navigator.push(context, MaterialPageRoute(builder: (context) => const SecurityScreen()));
+                }),
+                _buildMenuItem(LucideIcons.bell, 'Notifikasi', () {
+                  Navigator.push(context, MaterialPageRoute(builder: (context) => const NotificationScreen()));
+                }),
               ]),
               
               const SizedBox(height: 32),
               _buildMenuSection('DUKUNGAN', [
-                _buildMenuItem(LucideIcons.info, 'Pusat Bantuan'),
-                _buildMenuItem(LucideIcons.info, 'Tentang Aplikasi'),
+                _buildMenuItem(LucideIcons.info, 'Pusat Bantuan', () {}),
+                _buildMenuItem(LucideIcons.info, 'Tentang Aplikasi', () {}),
               ]),
               
               const SizedBox(height: 48),
@@ -155,12 +164,12 @@ class ProfileScreen extends StatelessWidget {
     );
   }
 
-  Widget _buildMenuItem(IconData icon, String title) {
+  Widget _buildMenuItem(IconData icon, String title, VoidCallback onTap) {
     return ListTile(
       leading: Icon(icon, size: 20, color: AppColors.textMain),
       title: Text(title, style: GoogleFonts.outfit(fontSize: 14, fontWeight: FontWeight.w600)),
       trailing: const Icon(LucideIcons.chevronRight, size: 16),
-      onTap: () {},
+      onTap: onTap,
     );
   }
 }

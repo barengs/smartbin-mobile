@@ -118,4 +118,37 @@ class ApiService {
       rethrow;
     }
   }
+
+  Future<Response> updateProfile(String token, {required String name, required String phoneNumber}) async {
+    try {
+      return await _dio.put('/user/profile', 
+        data: {
+          'name': name,
+          'phone_number': phoneNumber,
+        },
+        options: Options(headers: {'Authorization': 'Bearer $token'})
+      );
+    } on DioException catch (e) {
+      rethrow;
+    }
+  }
+
+  Future<Response> changePassword(String token, {
+    required String currentPassword, 
+    required String newPassword, 
+    required String newPasswordConfirmation
+  }) async {
+    try {
+      return await _dio.put('/user/change-password', 
+        data: {
+          'current_password': currentPassword,
+          'new_password': newPassword,
+          'new_password_confirmation': newPasswordConfirmation,
+        },
+        options: Options(headers: {'Authorization': 'Bearer $token'})
+      );
+    } on DioException catch (e) {
+      rethrow;
+    }
+  }
 }
