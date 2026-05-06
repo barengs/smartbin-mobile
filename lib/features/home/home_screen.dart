@@ -1,34 +1,54 @@
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:lucide_icons_flutter/lucide_icons.dart';
+import 'package:provider/provider.dart';
+import '../../core/providers/user_provider.dart';
 import '../../core/theme.dart';
+import '../redeem/redeem_screen.dart';
+import '../activity/activity_screen.dart';
+import '../../core/utils/extensions.dart';
 
 class HomeScreen extends StatelessWidget {
   const HomeScreen({super.key});
 
   @override
   Widget build(BuildContext context) {
+    final userProvider = context.watch<UserProvider>();
+    final user = userProvider.user;
+
+    if (userProvider.isLoading && user == null) {
+      return const Scaffold(
+        body: Center(child: CircularProgressIndicator()),
+      );
+    }
     return Scaffold(
       backgroundColor: AppColors.background,
       body: SafeArea(
-        child: SingleChildScrollView(
-          child: Padding(
-            padding: const EdgeInsets.all(24.0),
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                _buildHeader(),
-                const SizedBox(height: 32),
-                _buildPointCard(),
-                const SizedBox(height: 32),
-                _buildSectionTitle('Layanan Utama'),
-                const SizedBox(height: 16),
-                _buildQuickActions(),
-                const SizedBox(height: 32),
-                _buildSectionTitle('Aktivitas Terakhir'),
-                const SizedBox(height: 16),
-                _buildRecentActivityList(),
-              ],
+        child: RefreshIndicator(
+          onRefresh: () => userProvider.fetchProfile(),
+          child: SingleChildScrollView(
+            physics: const AlwaysScrollableScrollPhysics(),
+            child: Padding(
+              padding: const EdgeInsets.all(24.0),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  _buildHeader(user?['name'] ?? 'Pahlawan'),
+                  const SizedBox(height: 32),
+                  _buildPointCard(
+                    context, 
+                    num.tryParse(user?['total_points']?.toString() ?? '0') ?? 0
+                  ),
+                  const SizedBox(height: 32),
+                  _buildSectionTitle('Layanan Utama'),
+                  const SizedBox(height: 16),
+                  _buildQuickActions(),
+                  const SizedBox(height: 32),
+                  _buildSectionTitle('Aktivitas Terakhir'),
+                  const SizedBox(height: 16),
+                  _buildRecentActivityList(),
+                ],
+              ),
             ),
           ),
         ),
@@ -36,50 +56,54 @@ class HomeScreen extends StatelessWidget {
     );
   }
 
-  Widget _buildHeader() {
-    return Row(
-      mainAxisAlignment: MainAxisAlignment.spaceBetween,
+  Widget _buildHeader(String name) {
+    return Column(
       children: [
-        Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
+        Row(
+          mainAxisAlignment: MainAxisAlignment.spaceBetween,
           children: [
-            Text(
-              'Halo, Eka!',
-              style: GoogleFonts.outfit(
-                fontSize: 24,
-                fontWeight: FontWeight.w900,
-                color: AppColors.textMain,
-              ),
+            Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  'Halo, $name!',
+                  style: GoogleFonts.outfit(
+                    fontSize: 24,
+                    fontWeight: FontWeight.w900,
+                    color: AppColors.textMain,
+                  ),
+                ),
+                Text(
+                  'Sudahkah Anda mendaur ulang hari ini?',
+                  style: GoogleFonts.outfit(
+                    fontSize: 13,
+                    color: AppColors.textSecondary,
+                    fontWeight: FontWeight.w600,
+                  ),
+                ),
+              ],
             ),
-            Text(
-              'Sudahkah Anda mendaur ulang hari ini?',
-              style: GoogleFonts.outfit(
-                fontSize: 13,
-                color: AppColors.textSecondary,
-                fontWeight: FontWeight.w600,
+            Container(
+              padding: const EdgeInsets.all(10),
+              decoration: BoxDecoration(
+                color: Colors.white,
+                borderRadius: BorderRadius.circular(14),
+                boxShadow: [
+                  BoxShadow(
+                    color: Colors.black.withOpacity(0.05),
+                    blurRadius: 10,
+                  )
+                ],
               ),
+              child: const Icon(LucideIcons.bell, color: AppColors.textMain, size: 20),
             ),
           ],
-        ),
-        Container(
-          padding: const EdgeInsets.all(10),
-          decoration: BoxDecoration(
-            color: Colors.white,
-            borderRadius: BorderRadius.circular(14),
-            boxShadow: [
-              BoxShadow(
-                color: Colors.black.withOpacity(0.05),
-                blurRadius: 10,
-              )
-            ],
-          ),
-          child: const Icon(LucideIcons.bell, color: AppColors.textMain, size: 20),
         ),
       ],
     );
   }
-
-  Widget _buildPointCard() {
+  Widget _buildPointCard(BuildContext context, num points) {
+    final idrValue = points * 10;
     return Container(
       width: double.infinity,
       padding: const EdgeInsets.all(24),
@@ -114,7 +138,7 @@ class HomeScreen extends StatelessWidget {
           ),
           const SizedBox(height: 8),
           Text(
-            '12,450',
+            points.toLocaleString(),
             style: GoogleFonts.outfit(
               color: Colors.white,
               fontSize: 36,
@@ -123,7 +147,7 @@ class HomeScreen extends StatelessWidget {
           ),
           const SizedBox(height: 4),
           Text(
-            'Setara dengan Rp 124.500',
+            'Setara dengan Rp ${idrValue.toLocaleString()}',
             style: GoogleFonts.outfit(
               color: Colors.white.withOpacity(0.8),
               fontSize: 12,
@@ -138,6 +162,7 @@ class HomeScreen extends StatelessWidget {
                   'TUKAR POIN',
                   LucideIcons.send,
                   Colors.white.withOpacity(0.2),
+                  onTap: () => Navigator.push(context, MaterialPageRoute(builder: (context) => const RedeemScreen())),
                 ),
               ),
               const SizedBox(width: 12),
@@ -146,6 +171,7 @@ class HomeScreen extends StatelessWidget {
                   'RIWAYAT',
                   LucideIcons.history,
                   Colors.white.withOpacity(0.2),
+                  onTap: () => Navigator.push(context, MaterialPageRoute(builder: (context) => const ActivityScreen())),
                 ),
               ),
             ],
@@ -155,28 +181,31 @@ class HomeScreen extends StatelessWidget {
     );
   }
 
-  Widget _buildCardButton(String label, IconData icon, Color color) {
-    return Container(
-      padding: const EdgeInsets.symmetric(vertical: 12),
-      decoration: BoxDecoration(
-        color: color,
-        borderRadius: BorderRadius.circular(12),
-      ),
-      child: Row(
-        mainAxisAlignment: MainAxisAlignment.center,
-        children: [
-          Icon(icon, color: Colors.white, size: 16),
-          const SizedBox(width: 8),
-          Text(
-            label,
-            style: GoogleFonts.outfit(
-              color: Colors.white,
-              fontSize: 10,
-              fontWeight: FontWeight.w900,
-              letterSpacing: 1,
+  Widget _buildCardButton(String label, IconData icon, Color color, {VoidCallback? onTap}) {
+    return InkWell(
+      onTap: onTap,
+      child: Container(
+        padding: const EdgeInsets.symmetric(vertical: 12),
+        decoration: BoxDecoration(
+          color: color,
+          borderRadius: BorderRadius.circular(12),
+        ),
+        child: Row(
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: [
+            Icon(icon, color: Colors.white, size: 16),
+            const SizedBox(width: 8),
+            Text(
+              label,
+              style: GoogleFonts.outfit(
+                color: Colors.white,
+                fontSize: 10,
+                fontWeight: FontWeight.w900,
+                letterSpacing: 1,
+              ),
             ),
-          ),
-        ],
+          ],
+        ),
       ),
     );
   }

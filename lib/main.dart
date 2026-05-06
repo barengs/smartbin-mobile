@@ -1,10 +1,20 @@
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
+import 'package:provider/provider.dart';
+import 'core/providers/user_provider.dart';
 import 'features/auth/login_screen.dart';
 import 'core/theme.dart';
 
 void main() {
-  runApp(const SmartBinApp());
+  WidgetsFlutterBinding.ensureInitialized();
+  runApp(
+    MultiProvider(
+      providers: [
+        ChangeNotifierProvider(create: (_) => UserProvider()),
+      ],
+      child: const SmartBinApp(),
+    ),
+  );
 }
 
 class SmartBinApp extends StatelessWidget {

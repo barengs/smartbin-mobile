@@ -1,6 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:lucide_icons_flutter/lucide_icons.dart';
+import 'package:provider/provider.dart';
+import '../../core/providers/user_provider.dart';
 import '../../core/theme.dart';
 import '../auth/login_screen.dart';
 
@@ -9,6 +11,9 @@ class ProfileScreen extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final userProvider = context.watch<UserProvider>();
+    final user = userProvider.user;
+
     return Scaffold(
       backgroundColor: AppColors.background,
       body: SafeArea(
@@ -35,11 +40,11 @@ class ProfileScreen extends StatelessWidget {
                     ),
                     const SizedBox(height: 16),
                     Text(
-                      'Eka',
+                      user?['name'] ?? 'Pahlawan',
                       style: GoogleFonts.outfit(fontSize: 22, fontWeight: FontWeight.w900),
                     ),
                     Text(
-                      'Pahlawan Kebersihan Platinum',
+                      user?['email'] ?? '',
                       style: GoogleFonts.outfit(color: AppColors.primary, fontWeight: FontWeight.bold),
                     ),
                   ],
@@ -62,19 +67,60 @@ class ProfileScreen extends StatelessWidget {
               const SizedBox(height: 48),
               SizedBox(
                 width: double.infinity,
-                child: TextButton.icon(
-                  onPressed: () {
-                    Navigator.pushAndRemoveUntil(
-                      context,
-                      MaterialPageRoute(builder: (context) => const LoginScreen()),
-                      (route) => false,
-                    );
-                  },
-                  icon: const Icon(LucideIcons.logOut, color: Colors.red),
-                  label: Text(
-                    'KELUAR AKUN',
-                    style: GoogleFonts.outfit(color: Colors.red, fontWeight: FontWeight.w900),
-                  ),
+                child: Column(
+                  children: [
+                    TextButton.icon(
+                      onPressed: () async {
+                        await userProvider.logout();
+                        if (context.mounted) {
+                          Navigator.pushAndRemoveUntil(
+                            context,
+                            MaterialPageRoute(builder: (context) => const LoginScreen()),
+                            (route) => false,
+                          );
+                        }
+                      },
+                      icon: const Icon(LucideIcons.logOut, color: Colors.orange),
+                      label: Text(
+                        'KELUAR AKUN',
+                        style: GoogleFonts.outfit(color: Colors.orange, fontWeight: FontWeight.w900),
+                      ),
+                    ),
+                    TextButton.icon(
+                      onPressed: () async {
+                        final confirm = await showDialog<bool>(
+                          context: context,
+                          builder: (context) => AlertDialog(
+                            title: const Text('Hapus Akun?'),
+                            content: const Text('Seluruh data poin dan riwayat Anda akan hilang secara permanen. Tindakan ini tidak dapat dibatalkan.'),
+                            actions: [
+                              TextButton(onPressed: () => Navigator.pop(context, false), child: const Text('BATAL')),
+                              TextButton(
+                                onPressed: () => Navigator.pop(context, true), 
+                                child: const Text('HAPUS', style: TextStyle(color: Colors.red)),
+                              ),
+                            ],
+                          ),
+                        );
+
+                        if (confirm == true) {
+                          final success = await userProvider.deleteAccount();
+                          if (success && context.mounted) {
+                            Navigator.pushAndRemoveUntil(
+                              context,
+                              MaterialPageRoute(builder: (context) => const LoginScreen()),
+                              (route) => false,
+                            );
+                          }
+                        }
+                      },
+                      icon: const Icon(LucideIcons.trash2, color: Colors.red),
+                      label: Text(
+                        'HAPUS AKUN PERMANEN',
+                        style: GoogleFonts.outfit(color: Colors.red, fontWeight: FontWeight.w900),
+                      ),
+                    ),
+                  ],
                 ),
               ),
             ],

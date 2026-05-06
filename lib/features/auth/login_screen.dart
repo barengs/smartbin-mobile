@@ -1,6 +1,9 @@
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:lucide_icons_flutter/lucide_icons.dart';
+import 'package:dio/dio.dart';
+import 'package:shared_preferences/shared_preferences.dart';
+import '../../core/services/api_service.dart';
 import '../../core/theme.dart';
 import 'register_screen.dart';
 import '../../main_navigation.dart';
@@ -13,9 +16,69 @@ class LoginScreen extends StatefulWidget {
 }
 
 class _LoginScreenState extends State<LoginScreen> {
-  final _phoneController = TextEditingController();
+  final _apiService = ApiService();
+  final _loginController = TextEditingController(); // Email or Phone
   final _passwordController = TextEditingController();
   bool _isPasswordVisible = false;
+  bool _isLoading = false;
+
+  void _handleLogin() async {
+    if (_isLoading) return;
+
+    if (_loginController.text.isEmpty || _passwordController.text.isEmpty) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('Email/No. HP dan Password harus diisi')),
+      );
+      return;
+    }
+
+    setState(() => _isLoading = true);
+
+    try {
+      final response = await _apiService.login(
+        _loginController.text,
+        _passwordController.text,
+      );
+
+      if (response.data['success']) {
+        final prefs = await SharedPreferences.getInstance();
+        await prefs.setString('token', response.data['data']['access_token']);
+        await prefs.setString('user_name', response.data['data']['user']['name']);
+        
+        if (mounted) {
+          Navigator.pushReplacement(
+            context,
+            MaterialPageRoute(builder: (context) => const MainNavigation()),
+          );
+        }
+      }
+    } on DioException catch (e) {
+      String message = 'Terjadi kesalahan';
+      if (e.response?.data != null) {
+        final data = e.response!.data;
+        if (data['errors'] != null) {
+          // Join all validation errors into one message
+          final errors = data['errors'] as Map<String, dynamic>;
+          message = errors.values.expand((e) => e as List).join('\n');
+        } else if (data['message'] != null) {
+          message = data['message'];
+        }
+      }
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text(message),
+            backgroundColor: Colors.red,
+            behavior: SnackBarBehavior.floating,
+          ),
+        );
+      }
+    } finally {
+      if (mounted) {
+        setState(() => _isLoading = false);
+      }
+    }
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -100,11 +163,11 @@ class _LoginScreenState extends State<LoginScreen> {
               ),
               const SizedBox(height: 8),
               TextField(
-                controller: _phoneController,
-                keyboardType: TextInputType.phone,
+                controller: _loginController,
+                keyboardType: TextInputType.emailAddress,
                 style: GoogleFonts.outfit(fontWeight: FontWeight.bold),
                 decoration: InputDecoration(
-                  hintText: '0812xxxx',
+                  hintText: 'Email atau Nomor HP',
                   prefixIcon: const Icon(LucideIcons.phone, size: 20),
                   filled: true,
                   fillColor: Colors.white,
@@ -172,12 +235,7 @@ class _LoginScreenState extends State<LoginScreen> {
                 width: double.infinity,
                 height: 60,
                 child: ElevatedButton(
-                  onPressed: () {
-                    Navigator.pushReplacement(
-                      context,
-                      MaterialPageRoute(builder: (context) => const MainNavigation()),
-                    );
-                  },
+                  onPressed: _isLoading ? null : _handleLogin,
                   style: ElevatedButton.styleFrom(
                     backgroundColor: AppColors.primary,
                     foregroundColor: Colors.white,
@@ -187,14 +245,20 @@ class _LoginScreenState extends State<LoginScreen> {
                     elevation: 8,
                     shadowColor: AppColors.primary.withOpacity(0.4),
                   ),
-                  child: Text(
-                    'MASUK SEKARANG',
-                    style: GoogleFonts.outfit(
-                      fontSize: 16,
-                      fontWeight: FontWeight.w900,
-                      letterSpacing: 1,
-                    ),
-                  ),
+                  child: _isLoading 
+                    ? const SizedBox(
+                        height: 24,
+                        width: 24,
+                        child: CircularProgressIndicator(color: Colors.white, strokeWidth: 3),
+                      )
+                    : Text(
+                        'MASUK SEKARANG',
+                        style: GoogleFonts.outfit(
+                          fontSize: 16,
+                          fontWeight: FontWeight.w900,
+                          letterSpacing: 1,
+                        ),
+                      ),
                 ),
               ),
               
